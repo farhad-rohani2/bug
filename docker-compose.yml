@@ -1,0 +1,56 @@
+version: '3'
+services:
+    test-bug:
+        build:
+            context: ./docker/8.2
+            dockerfile: Dockerfile
+            args:
+                WWWGROUP: '${WWWGROUP:-1000}'
+        image: docker.arvancloud.ir/sail-8.2/app
+        #        image: 'docker.arvancloud.ir/ariaieboy/sail-runtime-image:8.2'
+        extra_hosts:
+            - 'host.docker.internal:host-gateway'
+        ports:
+            - '8686:80'
+            - '5174:${VITE_PORT:-5173}'
+        environment:
+            #            WEBSERVER: cli
+            #            WWWGROUP: '${WWWGROUP:-1000}'
+            WWWUSER: '${WWWUSER:-1000}'
+            LARAVEL_SAIL: 1
+            XDEBUG_MODE: '${SAIL_XDEBUG_MODE:-off}'
+            XDEBUG_CONFIG: '${SAIL_XDEBUG_CONFIG:-client_host=host.docker.internal}'
+            IGNITION_LOCAL_SITES_PATH: '${PWD}'
+        env_file:
+            - .env
+
+        volumes:
+            - '.:/var/www/html'
+        #            - './docker/8.2:/etc/supervisor/conf.d'
+        networks:
+            - sail
+        depends_on:
+            - mysql
+    mysql:
+        image: 'docker.arvancloud.ir/mysql/mysql-server:8.0'
+        ports:
+            - '33066:3306'
+        environment:
+            MYSQL_ROOT_PASSWORD: '${DB_PASSWORD}'
+            MYSQL_ROOT_HOST: '%'
+            MYSQL_DATABASE: '${DB_DATABASE}'
+            MYSQL_USER: '${DB_USERNAME}'
+            MYSQL_PASSWORD: '${DB_PASSWORD}'
+            MYSQL_ALLOW_EMPTY_PASSWORD: 1
+        volumes:
+            - 'sail-mysql-6:/var/lib/mysql'
+#            - './docker/mysql/create-testing-database.sh:/docker-entrypoint-initdb.d/10-create-testing-database.sh'
+        networks:
+            - sail
+networks:
+    sail:
+        driver: bridge
+volumes:
+    sail-mysql-6:
+        driver: local
+
